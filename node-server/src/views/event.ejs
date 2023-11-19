@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" >
+        <title></title>
+    </head>
+<body>
+    <h1>通過チェックシステム</h1>
+    <div><a href="/">Back to Top</a></div>
+    <h2>Event : <%= event.title %></h2>
+
+    <h3>Map</h3>
+    <h4>Spots</h4>
+    <ol>
+        <% for (var i in spots) { %>
+        <li><div><%= spots[i].name %>  (<%= spots[i].sensorId %> )</div>
+            <div><%= spots[i].description %></div>
+        </li>
+        <% } %>
+    </ol>
+    <h4>Sensors</h4>
+    <ul>
+        <% for (var i in sensors) { %>
+        <li class="item<%= i+1 %>">
+            <div><%= sensors[i]._id %>  (<%= sensors[i].type %> )</div>
+            <div><%= sensors[i].note %></div>
+            <% const assignedSpots = spots.filter((spot) => spot.sensorId === sensors[i]._id); 
+               if (assignedSpots.length) {
+            %>
+            <div>Assigned spot
+                <ul>
+                    <% for (var j in assignedSpots) { %>
+                        <li><%= assignedSpots[j].name %></li>
+                    <% } %>
+                </ul>
+            </div>
+            <% } %>
+        </li>
+        <% } %>
+    </ul>
+    <h3>Races</h3>
+
+    
+    <script>
+        const eventId = '<%- event._id %>';
+        const nextSpotOrder = parseInt('<%- spots.length %>');
+        function genUUID() {
+            const uuidElem = document.getElementById('uuid');
+            const newId = crypto.randomUUID();
+            uuidElem.value = newId;
+        }
+        function addSensor() {
+            const uuid = document.getElementById('uuid').value;
+            const type = document.getElementById('sensorType').value;
+            const note = document.getElementById('sensorNote').value;
+            const newSensor = {
+                eventId: eventId,
+                _id: uuid,
+                type: type,
+                note: note
+            };
+            fetch("/api/sensor/", {
+                method: "POST",
+                headers: {
+                    "Content-Type" : "application/json"
+                },
+                body: JSON.stringify(newSensor)
+            }).finally(function() {
+                window.location.reload();
+            })
+        }
+        function addSpot() {
+            const name = document.getElementById('spotName').value;
+            const movable = (document.getElementById('spotMovable').value === '1') ? true:false;
+            const description = document.getElementById('spotDescription').value;
+            const sensorId = document.getElementById('spotSensorId').value;
+            const order = nextSpotOrder;
+            const newSpot = {
+                eventId,
+                name,
+                order,
+                movable,
+                description,
+                sensorId
+            }
+            fetch("/api/spot/", {
+                method: "POST",
+                headers: {
+                    "Content-Type" : "application/json"
+                },
+                body: JSON.stringify(newSpot)
+            }).finally(function() {
+                window.location.reload();
+            })
+        }
+
+        function getGPSCoordinates(){
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(insertPosition);
+            }
+        }
+        function insertPosition(geolocationPosition) {
+            console.log(geolocationPosition);
+            document.getElementById('latitude').value = geolocationPosition.coords.latitude;
+            document.getElementById('longitude').value = geolocationPosition.coords.longitude;
+            document.getElementById('altitude').value = geolocationPosition.coords.altitude;
+            document.getElementById('timestamp').value = new Date(geolocationPosition.timestamp).toISOString();
+        }
+        function sendSensorSetup() {
+            const sensorId = document.getElementById('sensorIdForSetup').value;
+            const newSpot = {
+                eventId,
+                name,
+                order,
+                movable,
+                description,
+                sensorId
+            }
+            fetch("/api/sensor/" + sensorId + '/setup', {
+                method: "POST",
+                headers: {
+                    "Content-Type" : "application/json"
+                },
+                body: JSON.stringify(newSpot)
+            }).finally(function() {
+                window.location.reload();
+            })
+        }
+
+    </script>
+    <h3>センサーの登録</h3>
+    <form>
+        <div>
+            <label>UUID</label>
+            <input type="text" name="uuid" id="uuid">
+            <button type="button" onclick="genUUID()">gen</button>
+        </div>
+        <div>
+            <label>Sensor Type</label>
+            <select name="sensorType" id="sensorType">
+                <option value="M5Stack">M5Stack</option>
+            </select>
+        </div>
+        <div>
+            <label>note</label>
+            <textarea name="sensorNote" id="sensorNote"></textarea>
+        </div>
+        <div>
+            <button type="button" onclick="addSensor()">add</button>
+        </div>
+    </form>
+    <h3>Spot の登録</h3>
+    <form>
+        <div>
+            <label>Label</label>
+            <input type="text" name="spotName" id="spotName" />
+        </div>
+        <div>
+            <label>
+                <input type="checkbox" id="spotMovable" value="1">
+                Spot Movable</label>
+        </div>
+        <div>
+            <label>note</label>
+            <textarea name="spotDescription" id="spotDescription"></textarea>
+        </div>
+        <div>
+            <label>Sensor</label>
+            <select name="spotSensorId" id="spotSensorId">
+                <option value="">none</option>
+                <% for (var i in sensors) { %>
+                    <option value="<%= sensors[i]._id %>"><%= sensors[i]._id %> (<%= sensors[i].type %> )</option>
+                <% } %>
+            </select>
+        </div>
+        <div>
+            <button type="button" onclick="addSpot()">add</button>
+        </div>
+    </form>
+    <h3>センサーセットアップ情報の送信</h3>
+    <form>
+        <div>
+            <label>Sensor</label>
+            <select name="sensor" id="sensorIdForSetup">
+                <% for (var i in sensors) {
+                    const assignedSpots = spots.filter((spot) => spot.sensorId === sensors[i]._id);
+                    let spotName = ' spot is not assigned yet ';
+                    if (assignedSpots.length) {
+                        spotName = assignedSpots[0].name;
+                    }
+                    %>
+                    <option value="<%= sensors[i]._id %>"><%= sensors[i]._id %> ( <%= spotName %> )</option>
+                <% } %>
+            </select>
+        </div>
+        <div>
+            <label>Spot</label>
+            <div> - </div>
+        </div>
+        <div>
+            <label>latitude - longitude - altitude - timestamp</label>
+            <input type="text" id="latitude">
+            <input type="text" id="longitude">
+            <input type="text" id="altitude">
+            <input type="text" id="timestamp">
+            <button type="button" onclick="getGPSCoordinates()">get GPS Coordinates</button>
+        </div>
+        <div>
+            <button type="button" onclick="sendSensorSetup()">Send</button>
+        </div>
+    </form>
+    <h3>スポットチェックイン情報の送信</h3>
+</body>
+</html>
+
+
