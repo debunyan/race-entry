@@ -22,6 +22,11 @@ const file_api_router_1 = require("./routers/file-api.router");
 const file_router_1 = require("./routers/file.router");
 const sonsor_api_router_1 = require("./routers/sonsor-api.router");
 const spot_api_router_1 = require("./routers/spot-api.router");
+const user_api_router_1 = require("./routers/user-api.router");
+const race_api_router_1 = require("./routers/race-api.router");
+const race_route_point_api_router_1 = require("./routers/race-route-point-api.router");
+const race_participant_api_router_1 = require("./routers/race-participant-api.router");
+const public_api_router_1 = require("./routers/public-api.router");
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 app.set('view engine', 'ejs');
@@ -39,12 +44,13 @@ app.use("/api/file", file_api_router_1.fileApiRouter);
 const port = process.env.PORT;
 const topPageRouter = express_1.default.Router();
 topPageRouter.get('/', function (req, res, next) {
-    var _a;
+    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const events = (yield ((_a = database_service_2.collections.events) === null || _a === void 0 ? void 0 : _a.find({}).toArray()));
+            const users = (yield ((_b = database_service_2.collections.users) === null || _b === void 0 ? void 0 : _b.find({}).toArray()));
             res.status(200);
-            res.render('index.ejs', { events });
+            res.render('index.ejs', { events, users });
         }
         catch (e) {
             res.status(300).json({ error: e });
@@ -58,6 +64,11 @@ topPageRouter.get('/', function (req, res, next) {
     app.use("/api/event", event_api_router_1.eventApiRouter);
     app.use("/api/sensor", sonsor_api_router_1.sensorApiRouter);
     app.use("/api/spot", spot_api_router_1.spotApiRouter);
+    app.use("/api/user", user_api_router_1.userApiRouter);
+    app.use("/api/race", race_api_router_1.raceApiRouter);
+    app.use("/api/race-route-point", race_route_point_api_router_1.raceRoutePointApiRouter);
+    app.use("/api/race-participant", race_participant_api_router_1.raceParticipantApiRouter);
+    app.use("/papi/", public_api_router_1.publicApiRouter);
     app.listen(port, () => {
         console.log(`[server]: Server is running at http://localhost:${port}`);
     });

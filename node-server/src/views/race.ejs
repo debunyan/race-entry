@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" >
+        <title></title>
+    </head>
+<body>
+    <h1>通過チェックシステム</h1>
+    <div><a href="/">Back to Top</a></div>
+    <p><a href="<%= '/event/' + event._id %>">Event : <%= event.title %></a></p>
+    <h2>Race : <%= race.title %></h2>
+
+    <h4>Route</h4>
+    <ol>
+        <% for (var i in raceRoutePoints) { %>
+            <% 
+                const rt = raceRoutePoints[i];
+                const spot = spotsById.get(rt.spotId);
+                let spotName = '';
+                let sensorType = ''
+                let sensorId = ''
+                let gmapLink = null;
+                if (spot) {
+                    spotName = spot.name;
+                    sensorId = spot.sensorId;
+                    const sensor = sensorsById.get(spot.sensorId);
+                    if (sensor) {
+                        sensorType = sensor.type;
+                    }
+                    if (spot.gpsCoordinates) {
+                        gmapLink = 'https://www.google.com/maps/search/?api=1&query=' + spot.gpsCoordinates.latitude + '%2C' + spot.gpsCoordinates.longitude;
+                    }
+                }
+            %>
+            <li><div><%= raceRoutePoints[i].title %> ( <%= spotName %> : <%= sensorType %> : <%= sensorId %> )</div>
+                <% if (gmapLink) { %>
+                <div><a href="<%= gmapLink %>" target="_blank">google map</a></div>
+                <% } %>
+            </li>
+        <% } %>
+
+    </ol>
+
+    <h4>Participants</h4>
+    <ul>
+        <% for (var i in raceParicipantUsers) { %>
+            <li><%= raceParicipantUsers[i].name %></li>
+        <% } %>
+    </ul>
+    
+    <script>
+        const eventId = '<%- event._id %>';
+        const raceId = '<%- race._id %>';
+        const nextRoutePointOrder = parseInt('<%- raceRoutePoints.length %>');
+        function genUUID() {
+            const uuidElem = document.getElementById('uuid');
+            const newId = crypto.randomUUID();
+            uuidElem.value = newId;
+        }
+
+        function addRoutePoint() {
+            const title = document.getElementById('spotName').value;
+            const note = document.getElementById('spotDescription').value;
+            const spotId = document.getElementById('spotId').value;
+            const order = nextRoutePointOrder;
+            const newSpot = {
+                raceId,
+                title,
+                order,
+                note,
+                spotId
+            }
+            fetch("/api/race-route-point/", {
+                method: "POST",
+                headers: {
+                    "Content-Type" : "application/json"
+                },
+                body: JSON.stringify(newSpot)
+            }).finally(function() {
+                window.location.reload();
+            })
+        }
+
+        function addUser()
+        {
+            const userId = document.getElementById('userId').value;
+            const newEntry = {
+                eventId,
+                raceId,
+                userId
+            }
+            fetch("/api/race-participant/", {
+                method: "POST",
+                headers: {
+                    "Content-Type" : "application/json"
+                },
+                body: JSON.stringify(newEntry)
+            }).finally(function() {
+                window.location.reload();
+            })
+        }
+
+        function checkinSpot()
+        {
+            const sensorId = document.getElementById('checkinSensorId').value;
+            const userId = document.getElementById('checkinUserId').value;
+            const newEntry = {
+                'device-id' : sensorId,
+                'time-stamp' : new Date().toISOString(),
+                'user-id' : userId
+            }
+
+            fetch("/papi/spot-checkin", {
+                method: "POST",
+                headers: {
+                    "Content-Type" : "application/json"
+                },
+                body: JSON.stringify(newEntry)
+            }).finally(function() {
+                window.location.reload();
+            })
+        }
+    </script>
+    <h3>Route Point の登録</h3>
+    <form>
+        <div>
+            <label>Label</label>
+            <input type="text" name="spotName" id="spotName" />
+        </div>
+        <div>
+            <label>note</label>
+            <textarea name="spotDescription" id="spotDescription"></textarea>
+        </div>
+        <div>
+            <label>Spot</label>
+            <select name="spotId" id="spotId">
+                <% for (var i in spots) { %>
+                <% 
+                %>
+                    <option value="<%= spots[i]._id %>"><%= spots[i]._id %> (<%= spots[i].name %> )</option>
+                <% } %>
+            </select>
+        </div>
+        <div>
+            <button type="button" onclick="addRoutePoint()">add</button>
+        </div>
+    </form>
+    <h3>エントリー</h3>
+    <form>
+        <div>
+            <label>User</label>
+            <select name="userId" id="userId">
+                <% for (var i in users) { %>
+                    <option value="<%= users[i]._id %>"><%= users[i].name %></option>
+                <% } %>
+            </select>
+        </div>
+        <div>
+            <button type="button" onclick="addUser()">add</button>
+        </div>
+    </form>
+    <h3>通過データの送信</h3>
+    <form>
+        <div>
+            <label>Spot</label>
+            <select name="spotId" id="checkinSensorId">
+                <% for (var i in spots) { %>
+                <% 
+                    if (!spots[i].sensorId || spots[i].sensorId === '')  {
+                        continue;
+                    }
+                %>
+                    <option value="<%= spots[i].sensorId %>"><%= spots[i].name %> ( sensor: <%= spots[i].sensorId %>) )</option>
+                <% } %>
+            </select>
+        </div>
+        <div>
+            <label>User</label>
+            <select name="userId" id="checkinUserId">
+                <% for (var i in users) { %>
+                    <option value="<%= users[i]._id %>"><%= users[i].name %></option>
+                <% } %>
+            </select>
+        </div>
+        <div>
+            <button type="button" onclick="checkinSpot()">add</button>
+        </div>
+    </form>
+    <h3>通過データ</h3>
+    <ul>
+        <% for (var i in raceLaps) { %>
+            <%
+            let routePoint = '';
+            let userName = '';
+            const user = usersById.get(raceLaps[i].userId)
+            if (user) {
+                userName = user.name;
+            }
+            const raceRoutePoint = raceRoutePointsById.get(raceLaps[i].routePointId);
+            if (raceRoutePoint) {
+                routePoint = raceRoutePoint.title;
+            }
+            %>
+            <li><%= raceLaps[i].timestamp %> : <%= routePoint %> : <%= userName %></li>
+        <% } %>
+    </ul>
+</body>
+</html>
+
+

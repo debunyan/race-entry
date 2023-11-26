@@ -8,9 +8,15 @@
     <h1>通過チェックシステム</h1>
     <h2>Events</h2>
     <ul>
-        <% for (var i in events) { %>
+        <% for (let i in events) { %>
         <li class="item<%= i+1 %>"><a href="<%= '/event/' + events[i]._id %>"><%= events[i].title %></a></li>
         <% } %>
+    </ul>
+    <h2>Users</h2>
+    <ul>
+        <% for (let i in users) { %>
+            <li class="item<%= i+1 %>"><%= users[i].name %></li>
+        <% } %>    
     </ul>
     <h2>Debug</h2>
     <h3>イベントの登録</h3>
@@ -31,6 +37,21 @@
                     window.location.reload();
                 })
             }
+            function addUser() {
+                const inputElem = document.getElementById('userName');
+                const newUser = {
+                    name: inputElem.value,
+                };
+                fetch("/api/user/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type" : "application/json"
+                    },
+                    body: JSON.stringify(newUser)
+                }).finally(function() {
+                    window.location.reload();
+                })
+            }
         </script>
     <form>
         <div>
@@ -39,6 +60,16 @@
         </div>
         <div>
             <button type="button" onclick="addREvent()">Add</button>
+        </div>
+    </form>
+    <h3>User の登録</h3>
+    <form>
+        <div>
+            <label>UserName</label>
+            <input type='text' name="userName" id="userName" >
+        </div>
+        <div>
+            <button type="button" onclick="addUser()">Add</button>
         </div>
     </form>
 

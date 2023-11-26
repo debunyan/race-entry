@@ -50,9 +50,15 @@ function connectToDatabase() {
             const client = new mongoDB.MongoClient(mongoConnectionString);
             yield client.connect();
             const db = client.db(process.env.MOUNTAIN_DB);
+            exports.collections.users = db.collection('users');
             exports.collections.events = db.collection('events');
             exports.collections.sensors = db.collection('sensors');
             exports.collections.spots = db.collection('spots');
+            exports.collections.races = db.collection('races');
+            exports.collections.raceRoutePoints = db.collection('raceRoutePoints');
+            exports.collections.raceParticipants = db.collection('raceParticipants');
+            exports.collections.raceLaps = db.collection('raceLaps');
+            exports.collections.raceEventLogs = db.collection('raceEventLogs');
             exports.collections.files = db.collection('files');
         }
         catch (e) {

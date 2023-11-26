@@ -13,7 +13,19 @@
     <h4>Spots</h4>
     <ol>
         <% for (var i in spots) { %>
-        <li><div><%= spots[i].name %>  (<%= spots[i].sensorId %> )</div>
+        <%
+            const spot = spots[i];
+            let gmapLink = null;
+            if (spot.gpsCoordinates) {
+                gmapLink = 'https://www.google.com/maps/search/?api=1&query=' + spot.gpsCoordinates.latitude + '%2C' + spot.gpsCoordinates.longitude;
+            }
+        %>
+        <li>
+            <% if (gmapLink) { %>
+                <div><a href="<%= gmapLink %>" target="_blank"><%= spots[i].name %>  (<%= spots[i].sensorId %> )</a></div>
+            <% } else { %>
+                <div><%= spots[i].name %>  (<%= spots[i].sensorId %> )</div>
+            <% } %>
             <div><%= spots[i].description %></div>
         </li>
         <% } %>
@@ -39,11 +51,16 @@
         <% } %>
     </ul>
     <h3>Races</h3>
-
+    <ul>
+        <% for (var i in races) { %>
+            <li><a href="<%= '/event/' + event._id + '/race/' + races[i]._id %>"><%= races[i].title %></a>
+            </li>
+        <% } %>    
+    </ul>
     
     <script>
         const eventId = '<%- event._id %>';
-        const nextSpotOrder = parseInt('<%- spots.length %>');
+        const nextRoutePointOrder = parseInt('<%- spots.length %>');
         function genUUID() {
             const uuidElem = document.getElementById('uuid');
             const newId = crypto.randomUUID();
@@ -93,6 +110,23 @@
                 window.location.reload();
             })
         }
+        function addRace() {
+            const title = document.getElementById('raceName').value;
+            const newRace = {
+                eventId,
+                title,
+            }
+            fetch("/api/race/", {
+                method: "POST",
+                headers: {
+                    "Content-Type" : "application/json"
+                },
+                body: JSON.stringify(newRace)
+            }).finally(function() {
+                window.location.reload();
+            })
+        }
+
 
         function getGPSCoordinates(){
             if (navigator.geolocation) {
@@ -100,23 +134,23 @@
             }
         }
         function insertPosition(geolocationPosition) {
-            console.log(geolocationPosition);
             document.getElementById('latitude').value = geolocationPosition.coords.latitude;
             document.getElementById('longitude').value = geolocationPosition.coords.longitude;
             document.getElementById('altitude').value = geolocationPosition.coords.altitude;
             document.getElementById('timestamp').value = new Date(geolocationPosition.timestamp).toISOString();
         }
         function sendSensorSetup() {
+            const latitude = document.getElementById('latitude').value;
+            const longitude = document.getElementById('longitude').value;
+            const altitude = document.getElementById('altitude').value;
+
             const sensorId = document.getElementById('sensorIdForSetup').value;
             const newSpot = {
-                eventId,
-                name,
-                order,
-                movable,
-                description,
-                sensorId
+                "device-id": sensorId,
+                "time-stamp": new Date().toISOString(),
+                "location": [latitude, longitude, altitude]
             }
-            fetch("/api/sensor/" + sensorId + '/setup', {
+            fetch("/papi/spot-setup", {
                 method: "POST",
                 headers: {
                     "Content-Type" : "application/json"
@@ -209,7 +243,18 @@
             <button type="button" onclick="sendSensorSetup()">Send</button>
         </div>
     </form>
-    <h3>スポットチェックイン情報の送信</h3>
+
+    <h3>レースの登録</h3>
+    <form>
+        <div>
+            <label>Label</label>
+            <input type="text" name="raceName" id="raceName" />
+        </div>
+        <div>
+            <button type="button" onclick="addRace()">Send</button>
+        </div>
+    </form>
+
 </body>
 </html>
 

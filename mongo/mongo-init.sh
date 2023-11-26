@@ -18,10 +18,7 @@ db.createCollection("sensors")
 db.createCollection("spots")
 
 db.createCollection("races")
-db.createCollection("checkpoints")
-
-db.createCollection("entries")
-
-db.createCollection("terreins")
+db.createCollection("raceParticipants")
+db.createCollection("raceRoutePoints")
 
 EOF

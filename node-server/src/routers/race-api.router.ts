@@ -1,27 +1,29 @@
 import express, { Request, Response } from "express";
 import * as mongoDB from "mongodb";
-import Sensor from "../models/sensor";
+import Race from "../models/race";
 import {collections} from "../services/database.service";
 
-export const sensorApiRouter = express.Router();
-sensorApiRouter.use(express.json());
+export const raceApiRouter = express.Router();
+
+raceApiRouter.use(express.json());
 
 
-sensorApiRouter.get("/", async function(req:Request, res:Response, next){
+
+raceApiRouter.get("/", async function(req:Request, res:Response, next){
     try {
-        const sensors = (await collections.sensors?.find({}).toArray()) as Sensor[];
-        res.status(200).json(sensors);
+        const races = (await collections.races?.find({}).toArray()) as Race[];
+        res.status(200).json(races);
     } catch (e) {
         res.status(300).json({error:e})
     }
 })
 
-sensorApiRouter.post("/", async function(req:Request, res:Response, next){
+raceApiRouter.post("/", async function(req:Request, res:Response, next){
     try {
-        const newSensor = req.body as Sensor;
-        newSensor.created = new Date().toISOString();
-        newSensor.modified = null;
-        const result = await collections.sensors?.insertOne(newSensor);
+        const newRace = req.body as Race;
+        newRace.created = new Date().toISOString();
+        newRace.modified = null;
+        const result = await collections.races?.insertOne(newRace);
 
         result
             ? res.status(201).json({'id': (await result).insertedId})
@@ -31,12 +33,11 @@ sensorApiRouter.post("/", async function(req:Request, res:Response, next){
     }
 })
 
-
-sensorApiRouter.get("/:id", async function(req:Request, res:Response, next){
+raceApiRouter.get("/:id", async function(req:Request, res:Response, next){
     const id = req?.params?.id;
     try {
-        const query = {_id: new mongoDB.UUID(id) };
-        const event = (await collections.sensors?.findOne(query)) as Sensor;
+        const query = {_id: new mongoDB.ObjectId(id) };
+        const event = (await collections.races?.findOne(query)) as Race;
         if (event) {
             res.status(200).json(event);
         } else {
@@ -47,16 +48,16 @@ sensorApiRouter.get("/:id", async function(req:Request, res:Response, next){
     }
 })
 
-sensorApiRouter.put("/:id", async function(req:Request, res:Response, next){
+raceApiRouter.put("/:id", async function(req:Request, res:Response, next){
     const id = req?.params?.id;
     try {
         // _id が残っていると MongoDB はアップデートしてくれない
-        const updatedEvent = req.body as Sensor;
+        const updatedEvent = req.body as Race;
         delete updatedEvent._id;
         updatedEvent.modified = new Date().toISOString();
 
-        const query = {_id: new mongoDB.UUID(id) };
-        const result = await collections.sensors?.replaceOne(query, updatedEvent);
+        const query = {_id: new mongoDB.ObjectId(id) };
+        const result = await collections.races?.replaceOne(query, updatedEvent);
 
         result
             ? res.status(201).json({'id': id})
@@ -69,11 +70,11 @@ sensorApiRouter.put("/:id", async function(req:Request, res:Response, next){
     }
 })
 
-sensorApiRouter.delete("/:id", async function(req:Request, res:Response, next){
+raceApiRouter.delete("/:id", async function(req:Request, res:Response, next){
     const id = req?.params?.id;
     try {
-        const query = {_id: new mongoDB.UUID(id) };
-        const result = await collections.sensors?.deleteOne(query);
+        const query = {_id: new mongoDB.ObjectId(id) };
+        const result = await collections.races?.deleteOne(query);
 
         if (result && (await result).deletedCount) {
             res.status(202).json({'id': id})
@@ -86,5 +87,3 @@ sensorApiRouter.delete("/:id", async function(req:Request, res:Response, next){
         res.status(300).json({error:e})
     }
 })
-
-
