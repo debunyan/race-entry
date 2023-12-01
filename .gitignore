@@ -1,3 +1,9 @@
 
 node_modules
 .DS_Store
+
+
+# 環境ごとの上書きファイル
+.env.production
+docker-compose.override.yml
+
