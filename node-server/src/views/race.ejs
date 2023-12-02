@@ -177,8 +177,8 @@
         <div>
             <label>User</label>
             <select name="userId" id="checkinUserId">
-                <% for (var i in users) { %>
-                    <option value="<%= users[i]._id %>"><%= users[i].name %></option>
+                <% for (var i in raceParicipantUsers) { %>
+                    <option value="<%= raceParicipantUsers[i]._id %>"><%= raceParicipantUsers[i].name %></option>
                 <% } %>
             </select>
         </div>
